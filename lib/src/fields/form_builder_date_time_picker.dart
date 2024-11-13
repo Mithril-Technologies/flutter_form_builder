@@ -196,53 +196,54 @@ class FormBuilderDateTimePicker extends FormBuilderFieldDecoration<DateTime> {
     this.anchorPoint,
     this.onEntryModeChanged,
   }) : super(
-          builder: (FormFieldState<DateTime?> field) {
-            final state = field as _FormBuilderDateTimePickerState;
+    builder: (FormFieldState<DateTime?> field) {
+      final state = field as _FormBuilderDateTimePickerState;
 
-            return TextField(
-              textDirection: textDirection,
-              textAlign: textAlign,
-              textAlignVertical: textAlignVertical,
-              maxLength: maxLength,
-              autofocus: autofocus,
-              decoration: state.decoration,
-              readOnly: true,
-              enabled: state.enabled,
-              autocorrect: autocorrect,
-              controller: state._textFieldController,
-              focusNode: state.effectiveFocusNode,
-              inputFormatters: inputFormatters,
-              keyboardType: keyboardType,
-              maxLines: maxLines,
-              obscureText: obscureText,
-              showCursor: showCursor,
-              minLines: minLines,
-              expands: expands,
-              style: style,
-              onEditingComplete: onEditingComplete,
-              buildCounter: buildCounter,
-              mouseCursor: mouseCursor,
-              cursorColor: cursorColor,
-              cursorRadius: cursorRadius,
-              cursorWidth: cursorWidth,
-              enableInteractiveSelection: enableInteractiveSelection,
-              keyboardAppearance: keyboardAppearance,
-              scrollPadding: scrollPadding,
-              strutStyle: strutStyle,
-              textCapitalization: textCapitalization,
-              textInputAction: textInputAction,
-              maxLengthEnforcement: maxLengthEnforcement,
-            );
-          },
-        );
+      return TextField(
+        textDirection: textDirection,
+        textAlign: textAlign,
+        textAlignVertical: textAlignVertical,
+        maxLength: maxLength,
+        autofocus: autofocus,
+        decoration: state.decoration,
+        readOnly: true,
+        enabled: state.enabled,
+        autocorrect: autocorrect,
+        controller: state._textFieldController,
+        focusNode: state.effectiveFocusNode,
+        inputFormatters: inputFormatters,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        obscureText: obscureText,
+        showCursor: showCursor,
+        minLines: minLines,
+        expands: expands,
+        style: style,
+        onEditingComplete: onEditingComplete,
+        buildCounter: buildCounter,
+        mouseCursor: mouseCursor,
+        cursorColor: cursorColor,
+        cursorRadius: cursorRadius,
+        cursorWidth: cursorWidth,
+        enableInteractiveSelection: enableInteractiveSelection,
+        keyboardAppearance: keyboardAppearance,
+        scrollPadding: scrollPadding,
+        strutStyle: strutStyle,
+        textCapitalization: textCapitalization,
+        textInputAction: textInputAction,
+        maxLengthEnforcement: maxLengthEnforcement,
+      );
+    },
+  );
 
   @override
   FormBuilderFieldDecorationState<FormBuilderDateTimePicker, DateTime>
-      createState() => _FormBuilderDateTimePickerState();
+  createState() => _FormBuilderDateTimePickerState();
 }
 
 class _FormBuilderDateTimePickerState extends FormBuilderFieldDecorationState<
-    FormBuilderDateTimePicker, DateTime> {
+    FormBuilderDateTimePicker,
+    DateTime> {
   late TextEditingController _textFieldController;
 
   late DateFormat _dateFormat;
@@ -255,7 +256,7 @@ class _FormBuilderDateTimePickerState extends FormBuilderFieldDecorationState<
     //setting this to value instead of initialValue here is OK since we handle initial value in the parent class
     final initVal = value;
     _textFieldController.text =
-        initVal == null ? '' : _dateFormat.format(initVal);
+    initVal == null ? '' : _dateFormat.format(initVal);
     effectiveFocusNode.addListener(_handleFocus);
   }
 
@@ -318,8 +319,8 @@ class _FormBuilderDateTimePickerState extends FormBuilderFieldDecorationState<
     return finalValue;
   }
 
-  Future<DateTime?> _showDatePicker(DateTime? currentValue) {
-    return showDatePicker(
+  Future<DateTime?> _showDatePicker(DateTime? currentValue) async {
+    final DateTime? selectedDate = await showDatePicker(
       context: context,
       selectableDayPredicate: widget.selectableDayPredicate,
       initialDatePickerMode: widget.initialDatePickerMode,
@@ -343,7 +344,44 @@ class _FormBuilderDateTimePickerState extends FormBuilderFieldDecorationState<
       anchorPoint: widget.anchorPoint,
       keyboardType: widget.keyboardType,
     );
+
+    if (selectedDate != null) {
+      return selectedDate;
+    } else {
+      return null;
+    }
   }
+
+  void _showDatePickerDialogs(DateTime? currentValue) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
+          ),
+          child: Container(
+            height: 400,
+            child: FutureBuilder<DateTime?>(
+              future: _showDatePicker(currentValue),
+              builder: (BuildContext context,
+                  AsyncSnapshot<DateTime?> snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  return Center(child: Text('Date Selected: ${snapshot.data}'));
+                } else {
+                  return Center(child: CircularProgressIndicator());
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   Future<TimeOfDay?> _showTimePicker(DateTime? currentValue) async {
     var builder = widget.transitionBuilder;
@@ -381,8 +419,9 @@ class _FormBuilderDateTimePickerState extends FormBuilderFieldDecorationState<
   }
 
   /// Sets the hour and minute of a [DateTime] from a [TimeOfDay].
-  DateTime combine(DateTime date, TimeOfDay? time) => DateTime(
-      date.year, date.month, date.day, time?.hour ?? 0, time?.minute ?? 0);
+  DateTime combine(DateTime date, TimeOfDay? time) =>
+      DateTime(
+          date.year, date.month, date.day, time?.hour ?? 0, time?.minute ?? 0);
 
   DateTime? convert(TimeOfDay? time) =>
       time == null ? null : DateTime(1, 1, 1, time.hour, time.minute);
@@ -391,6 +430,6 @@ class _FormBuilderDateTimePickerState extends FormBuilderFieldDecorationState<
   void didChange(DateTime? value) {
     super.didChange(value);
     _textFieldController.text =
-        (value == null) ? '' : _dateFormat.format(value);
+    (value == null) ? '' : _dateFormat.format(value);
   }
 }
